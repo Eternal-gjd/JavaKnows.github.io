@@ -1,5 +1,188 @@
 ## Spring
 
+### Spring中BeanFactory 和 ApplicationContext的作用和区别
+
+- 作用
+
+  1. BeanFactory 负责读取bean配置文件,管理bean的加载,实例化bean,维护bean之间的依赖关系,负责bean的生命周期
+
+  2. ApplicationContext 除了提供上述BeanFactory所能提供的功能之外,还提供完整的框架支持
+
+     1. 国际化支持
+
+        - ```java
+          package com.csa.taml.common.tools;
+          
+          import org.springframework.beans.factory.annotation.Autowired;
+          import org.springframework.context.MessageSource;
+          import org.springframework.context.i18n.LocaleContextHolder;
+          import org.springframework.stereotype.Component;
+          
+          import javax.annotation.PostConstruct;
+          import java.util.Locale;
+          
+          /**
+           * 国际化资源工具类
+           * @create 2017/11/13 16:37
+           */
+          @Component
+          public class MessageUtils {
+          
+              @Autowired
+              private MessageSource messageSource;
+          
+              private static MessageSource msgSource;
+          
+              /**
+               * @PostConstruct修饰的方法会在服务器加载Servle的时候运行，并且只会被服务器执行一次。
+               * PostConstruct在构造函数之后执行,init()方法之前执行
+               */
+              @PostConstruct
+              public void init() {
+                  msgSource = messageSource;
+              }
+          
+              /**
+               * 根据key值获得对应的中英文
+               * @param key 资源文件的KEY值
+               * @return 对应的中英文字符串
+               */
+              public static String getMessage(String key){
+                  return getMessage(key, null);
+              }
+          
+              /**
+               * 根据key值获得对应的中英文
+               * @param key 资源文件的KEY值
+               * @param parameter 参数
+               * @return 对应的中英文字符串
+               */
+              public static String getMessage(String key, Object[] parameter){
+                  Locale locale = LocaleContextHolder.getLocale();
+                  if(locale.getLanguage().equals("zh")){
+                      locale = Locale.CHINA;
+                  } else {
+                      locale = Locale.US;
+                  }
+                  return msgSource.getMessage(key, parameter, locale);
+              }
+          
+              /**
+               * 根据key值获得对应的中英文
+               * @param key 资源文件的KEY值
+               * @param parameter 参数
+               * @param def 为空时的默认字符
+               * @return 对应的中英文字符串
+               */
+              public static String getMessage(String key, Object[] parameter, String def){
+                  Locale locale = LocaleContextHolder.getLocale();
+                  if(locale.getLanguage().equals("zh")){
+                      locale = Locale.CHINA;
+                  } else {
+                      locale = Locale.US;
+                  }
+                  String msg = msgSource.getMessage(key, parameter, locale);
+                  if(msg == null || msg.length() < 0){
+                      msg = def;
+                  }
+                  return msg;
+              }
+          
+              /**
+               * 根据key值获得对应的中英文
+               * @param key 资源文件的KEY值
+               * @param parameter 参数
+               * @param def 为空时的默认字符
+               * @return 对应的中英文字符串
+               */
+              public static String getMessage(String key, Object[] parameter, String def, Locale locale){
+                  if(locale == null){
+                      locale = LocaleContextHolder.getLocale();
+                  }
+                  if(locale.getLanguage().equals("zh")){
+                      locale = Locale.CHINA;
+                  } else {
+                      locale = Locale.US;
+                  }
+                  String msg = msgSource.getMessage(key, parameter, locale);
+                  if(msg == null || msg.length() < 0){
+                      msg = def;
+                  }
+                  return msg;
+              }
+          
+              /**
+               * 根据key值获得对应的英文
+               * @param key 资源文件的KEY值
+               * @param parameter 参数
+               * @return 对应的英文字符串
+               */
+              public static String getMessageEnglish(String key, Object[] parameter){
+                  return msgSource.getMessage(key, parameter, Locale.US);
+              }
+          
+              /**
+               * 根据key值获得对应的中文
+               * @param key 资源文件的KEY值
+               * @param parameter 参数
+               * @return 对应的中文字符串
+               */
+              public static String getMessageChinese(String key, Object[] parameter){
+                  return msgSource.getMessage(key, parameter, Locale.CHINA);
+              }
+          
+              /**
+               * 根据key值获得对应的英文
+               * @param key 资源文件的KEY值
+               * @return 对应的英文字符串
+               */
+              public static String getMessageEnglish(String key){
+                  return getMessageEnglish(key, null);
+              }
+          
+              /**
+               * 根据key值获得对应的中文
+               * @param key 资源文件的KEY值
+               * @return 对应的中文字符串
+               */
+              public static String getMessageChinese(String key){
+                  return getMessageChinese(key, null);
+              }
+          
+              /**
+               *判断当前当前环境的语言是否是中文
+               */
+              public static boolean isChinese(){
+                  Locale locale = LocaleContextHolder.getLocale();
+                  if(locale.getLanguage().equals("zh")){
+                      return true;
+                  }
+                  return false;
+              }
+          
+              /**
+               * 根据key 值获取对应填充参数的字符串
+               * @param key
+               * @param params
+               * @return
+               */
+              public static String getFormatMessaget(String key, Object... params) {
+                  return String.format(getMessage(key), params);
+              }
+          
+          
+          }
+          
+          ```
+
+          
+
+     2. 资源访问:Resource rs = ctx.getResource("classPath:config.properties")
+
+     3. 事件传递:通过实现ApplicationContextAware接口
+
+
+
 ### Spring是如何解决循环依赖的
 
 - Spring通过三级缓存解决了循环依赖,其中一级缓存为单例对象池==>singletonObjects,二级缓存为早期曝光对象earlySingletonObjects,三级缓存为早期曝光对象工厂===>singletonFactories

@@ -413,3 +413,9 @@ Output：
 ### 2.2.15 如何选用集合?
 
 主要根据集合的特点来选用，比如我们需要根据键值获取到元素值时就选用Map接口下的集合，需要排序时选择TreeMap,不需要排序时就选择HashMap,需要保证线程安全就选用ConcurrentHashMap.当我们只需要存放元素值时，就选择实现Collection接口的集合，需要保证元素唯一时选择实现Set接口的集合比如TreeSet或HashSet，不需要就选择实现List接口的比如ArrayList或LinkedList，然后再根据实现这些接口的集合的特点来选用。
+
+### 2.2.16 List去重方式
+
+1. List的contains方法,对象需要重写equalsfangfa
+2. 在Java8 中, 使用流去重,List.stream().distinct().collect(Collectors.toList()),对象需要重写hashCode 和 equals 方法
+3. HashSet 去重,对象需要重写hashCode() 和 equals()方法
