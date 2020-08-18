@@ -193,3 +193,49 @@
 为什么使用三级缓存呢?二级缓存能解决循环依赖吗?
 
 - 如果要使用二级缓存解决循环依赖,意味着所有Bean在实例后就要被AOP代理,这样句违背 Spring设计的原则,Spring在设计之初就是通过AnnotationAwareAspectJAutoProxyCreator这个后置处理器来在Bean生命周期的最后一步来完成AOP代理,而不是在实例化就立马进行AOP代理.
+
+## SpringMVC
+
+1. 什么是SpringMVC
+
+   > SpringMVC是一个轻量级的Web框架,其将Model.View 和 Controller分离开来,将web层的职责进行解耦.
+
+2. SpringMVC的执行流程
+
+   ![SpringMVC执行流程图](http://47.114.45.144/springMvc.jpg)
+
+   1. user发送请求到前端控制器DispatcherServlet;
+   2. DispatcherServlet接受请求后,调用处理器映射器HandlerMapping,请求获取Handler;
+   3. HandlerMapping根据url找到具体的Handler处理器,并返回给DispatcherServlet
+   4. DispatcherServlet调用HandlerAdapter处理器适配器
+   5. HandlerAdapter经过适配调用具体的处理器(Handler,也叫后端控制器)
+   6. Handler执行完成并返回ModelAndView;
+   7. HandlerAdapter将返回的ModelAndView返回给DispatcherServlet;
+   8. DispatcherServlet调用ViewResolver视图解析器进行解析物理视图为逻辑视图
+   9. ViewResolver将逻辑视图返回给DispatcherServlet
+   10. DispatcherServlet 对View进行渲染视图
+   11. DispatcherServlet最终响应回user
+
+## SpringBoot
+
+1. 什么是SpringBoot
+
+   - > SpringBoot是Spring开源项目的一个子项目,是Spring组件一站式解决的方案,主要是简化Spring的配置,开发者更容易上手
+
+2. SpringBoot的优点有哪些
+
+   - 优点
+     1. 开箱即用,简化配置
+     2. 避免了maven导入依赖的冲突
+     3. 提供了一些大型项目内嵌非服务性的功能:如内嵌Tomcat容器,安全管理,运行数据监控,运行状况检查和外部配置等
+
+3. SpringBoot的核心注解
+
+   - @SpringBootApplication==>也就是启动类上的注解,主要有以下几个注解复合而成
+     - @SpringBootConfiguration:组合@Configuration注解,实现配置文件的功能
+     - @EnableAutoConfiguration:打开自动配置功能,可以关闭自动配置数据源的配置
+     - @Component:Spring组件扫描
+
+## **Spring Boot、Spring MVC 和 Spring 有什么区别？**
+
+## SpringCloud
