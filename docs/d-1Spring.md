@@ -196,11 +196,11 @@
 
 ## SpringMVC
 
-1. 什么是SpringMVC
+### 1. 什么是SpringMVC
 
    > SpringMVC是一个轻量级的Web框架,其将Model.View 和 Controller分离开来,将web层的职责进行解耦.
 
-2. SpringMVC的执行流程
+### 2. SpringMVC的执行流程
 
    ![SpringMVC执行流程图](http://47.114.45.144/springMvc.jpg)
 
@@ -218,18 +218,18 @@
 
 ## SpringBoot
 
-1. 什么是SpringBoot
+### 1. 什么是SpringBoot
 
    - > SpringBoot是Spring开源项目的一个子项目,是Spring组件一站式解决的方案,主要是简化Spring的配置,开发者更容易上手
 
-2. SpringBoot的优点有哪些
+### 2. SpringBoot的优点有哪些
 
    - 优点
      1. 开箱即用,简化配置
      2. 避免了maven导入依赖的冲突
      3. 提供了一些大型项目内嵌非服务性的功能:如内嵌Tomcat容器,安全管理,运行数据监控,运行状况检查和外部配置等
 
-3. SpringBoot的核心注解
+### 3. SpringBoot的核心注解
 
    - @SpringBootApplication==>也就是启动类上的注解,主要有以下几个注解复合而成
      - @SpringBootConfiguration:组合@Configuration注解,实现配置文件的功能
