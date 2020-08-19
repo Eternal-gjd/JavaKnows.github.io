@@ -2,7 +2,7 @@
 
 # 二 Java基础+集合+多线程+JVM
 
-> 以下文章引用：JavaGuide--=====
+> 以下文章引用：JavaGuide-
 >
 
 ## 2.1 Java基础
