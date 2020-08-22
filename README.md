@@ -11,7 +11,7 @@
 <!-- MarkdownTOC -->
 
 - [Java](#Java)
-  - [Java基础](#Java-基础)
+  - [Java基础](#./docs/b-1面试题总结-Java基础)
 
 <!-- /MarkdownTOC -->
 
