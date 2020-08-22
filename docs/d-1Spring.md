@@ -175,8 +175,6 @@
           
           ```
 
-          
-
      2. 资源访问:Resource rs = ctx.getResource("classPath:config.properties")
 
      3. 事件传递:通过实现ApplicationContextAware接口

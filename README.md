@@ -10,5 +10,8 @@
 
 <!-- MarkdownTOC -->
 
+- [Java](#Java)
+  - [Java基础](#Java-基础)
+
 <!-- /MarkdownTOC -->
 
