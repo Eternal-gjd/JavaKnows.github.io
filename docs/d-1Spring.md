@@ -192,6 +192,35 @@
 
 - 如果要使用二级缓存解决循环依赖,意味着所有Bean在实例后就要被AOP代理,这样句违背 Spring设计的原则,Spring在设计之初就是通过AnnotationAwareAspectJAutoProxyCreator这个后置处理器来在Bean生命周期的最后一步来完成AOP代理,而不是在实例化就立马进行AOP代理.
 
+### 谈谈Spring AOP
+
+#### 1.AOP概念
+
+- AOP面向切面,是对OOP的一种补充,用于将那些与业务无关的,但却对多个对象产生影响的共同的行为和逻辑,抽取出一个公共的可重用的模块,这个模块别称为切面(Aspect),减少项目中的重复代码,降低模块间的耦合,同时提高系统的可维护性.可用于日志,权限认证,事务
+
+- AOP分为静态代理与动态代理,静态代理的代表就是AspectJ;动态代理代表就是SpringAOP
+
+  1. AspectJ是静态代理的增强,所谓静态代理就是AOP框架在编译阶段生成的AOP代理类,也可以称为编译增强,他会在编译阶段将AspectJ(切面)织入到Java字节码中,运行的时候就是增强后的AOP对象
+  2. Spring AOP使用的动态代理,所谓动态代理就是不修改原有的对象中的方法,不去修改字节码,而是每次运行时在内存中临时为方法生成一个AOP对象,这个对象包含了目标对象的所有方法,并且会在特定的切点做了增强处理,并回调原对象的方法
+
+- Spring AOP动态代理分为两种
+
+  1. JDK动态代理
+
+     - 只提供接口的代理,不提供类的代理,目标对象一定要实现接口.核心InvocationHandler接口和Proxy类,
+
+       InvocationHandler通过invoke()方法反射来调用目标类中的代码.动态地将横切逻辑和业务编织在一起;接着Proxy利用InvocationHandler动态创建一个符合某一接口的实例.生成目标类的代理对象
+
+  2. CGLib动态代理
+
+     - 目标对象可以不实现接口,如果代理类没有实现InvocationHandler接口,那么就是使用CGLib动态代理目标类,
+
+       CGLib可以在运行时动态的生成指定类的一个子类对象,并覆盖其中特定方法并添加增强代码,从而实现AOP,CGLib是通过继承的方式做的动态代理,因此如果某个类被标记为final,那么他是无法使用CGLib动态代理的
+
+- 静态代理与动态代理的区别在于生成AOP搭理对象的时机不同,相对来说AspectJ的静态代理方式具有更好的性能,但是AspectJ需要特定的编译器才能进行处理,但是Spring AOP是不需要指定的编译器处理的
+
+> InvocationHandler 的 invoke(Object  proxy,Method  method,Object[] args)：proxy是最终生成的代理实例;  method 是被代理目标实例的某个具体方法;  args 是被代理目标实例某个方法的具体入参, 在方法反射调用时使用。
+
 ## SpringMVC
 
 ### 1. 什么是SpringMVC
