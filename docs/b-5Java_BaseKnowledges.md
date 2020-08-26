@@ -12,7 +12,7 @@
    - 而当链表长度太长时,链表就转换成`红黑树`了,这就大大的提高了查询效率
 3. 当链表数组的容量超过初始容量的0.75时,再散列将链表数组扩大2倍,再把原来的链表数组搬到新的数组中
 
-![1594885307609](D:/Typora/Pictures/1594885307609.png)
+![1594885307609](http://47.114.45.144/1594885307609.png)
 
 ### HaspMap 扩容是怎样扩容的，为什么都是 2 的 N 次幂的大小。
 
@@ -129,13 +129,13 @@
 
         　　那么注意此时各个变量的值：对于 iterator，其 expectedModCount 为 0，cursor 的值为 1，lastRet 的值为 0。
 
-        　　对于 list，其 modCount 为 1，size 为 0。
-
-        　　接着看程序代码，执行完删除操作后，继续 while 循环，调用 hasNext 方法 () 判断，由于此时 cursor 为 1，而 size 为 0，那么返回 true，所以继续执行 while 循环，然后继续调用 iterator 的 next()方法：
-
-        　　注意，此时要注意 next() 方法中的第一句：checkForComodification()。
-
-        　　在 checkForComodification 方法中进行的操作是：
+            　　对于 list，其 modCount 为 1，size 为 0。
+    
+            　　接着看程序代码，执行完删除操作后，继续 while 循环，调用 hasNext 方法 () 判断，由于此时 cursor 为 1，而 size 为 0，那么返回 true，所以继续执行 while 循环，然后继续调用 iterator 的 next()方法：
+    
+            　　注意，此时要注意 next() 方法中的第一句：checkForComodification()。
+    
+            　　在 checkForComodification 方法中进行的操作是：
 
       ```java
       final void checkForComodification() {
