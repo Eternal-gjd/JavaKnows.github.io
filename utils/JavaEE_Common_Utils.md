@@ -194,7 +194,7 @@ public class SqlSessionUtils {
 
 ```
 
-## SaaSExport-Excel报表导出-DownloadUtil
+## Export-Excel报表导出-DownloadUtil
 
 ```java
 package cn.itcast.web.utils;
@@ -623,5 +623,319 @@ public class StringToDateConverter implements Converter<String,Date> {
         int i = localDate1.compareTo(localDate2);
         return i == -1 ? true : false;
     }
+```
+
+## Excel导出模板
+
+```java
+package com.csa.taml.controller.export;
+
+import com.alibaba.dubbo.config.annotation.Reference;
+import com.csa.taml.common.tools.ResponseResult;
+import com.csa.taml.domain.export.entity.ShippingCargoDetailsEntity;
+import com.csa.taml.service.export.ExportShippingOrderService;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.util.CellRangeAddress;
+import org.apache.poi.xssf.streaming.SXSSFWorkbook;
+import org.apache.shiro.authz.annotation.RequiresPermissions;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.List;
+
+/**
+ * Excel导出模板
+ */
+@RestController
+@RequestMapping("/export/order")
+@Api("Excel导出模板")
+public class ExportOutOrderController {
+
+    @Reference
+    private ExportShippingOrderService exportShippingOrderService;
+
+
+    /**
+     * 导出Excel格式的订单表
+     * 返回：excel文件
+     */
+    @PostMapping("/printExcel")
+    @ApiOperation("Excel导出模板")
+    public ResponseResult printExcel(@RequestBody Long[] ids,HttpServletResponse response) throws IOException {
+        if (ids==null&&ids.length==0){
+            return new ResponseResult<>(ResponseResult.StatusCode.SEVER_ERROR, "请勾选需要导出的货物");
+        }
+        //只查询已分拨未提取的货物信息
+        //shippingQuery.setStatus(ShippingOrderStatusEnum.assignNotReceive.code);
+        List<ShippingCargoDetailsEntity> list = exportShippingOrderService.queryListByCargoId(ids);
+        if (list == null && list.size() == 0) {
+            return new ResponseResult<>(ResponseResult.StatusCode.CLIENT_ERROR, "当前数据为空，请重新查询");
+        }
+        //1.创建工作簿
+        Workbook wb = new SXSSFWorkbook();
+        //2.生成工作单
+        Sheet sheet = wb.createSheet("待提货订单表");
+        //设置合并列
+        /**
+         * 参数依次为： 开始行号，结束行号，开始列号，结束列号
+         */
+        sheet.addMergedRegion(new CellRangeAddress(0, 0, 1, 14));
+        //设置列宽， 参数为：列索引，列宽度值
+        sheet.setColumnWidth(0, 6 * 256);
+        sheet.setColumnWidth(1, 11 * 256);
+        sheet.setColumnWidth(2, 16 * 256);
+        sheet.setColumnWidth(3, 11 * 256);
+        sheet.setColumnWidth(4, 11 * 256);
+        sheet.setColumnWidth(5, 29 * 256);
+        sheet.setColumnWidth(6, 11 * 256);
+        sheet.setColumnWidth(7, 11 * 256);
+        sheet.setColumnWidth(8, 11 * 256);
+        sheet.setColumnWidth(9, 11 * 256);
+        sheet.setColumnWidth(10, 11 * 256);
+        sheet.setColumnWidth(11, 11 * 256);
+        sheet.setColumnWidth(12, 11 * 256);
+        sheet.setColumnWidth(13, 11 * 256);
+
+        //3.创建表头行
+        Row row = sheet.createRow(0);
+        //3.4.设置行高度
+        row.setHeightInPoints(36);
+
+        //3.1 设置标题
+        String title = "待提货订单表";
+        //3.2 设置第二列的内容作为标题
+        Cell cell = row.createCell(1);
+        cell.setCellValue(title);
+        //3.3 设置大标题样式
+        cell.setCellStyle(bigTitle(wb));
+
+
+        //4.创建内容行
+        //4.1 创建标题
+        row = sheet.createRow(1);
+        //设置行高
+        row.setHeightInPoints(26);
+        String[] titles = {"紧急度", "装箱单号", "合同号", "合同类型", "送修/采购单位", "采购业务员", "收货人", "目的国", "件号", "序号", "货物名称", "分拨日期", "分拨人"};
+        for (int i = 0; i < titles.length; i++) {
+            cell = row.createCell(i + 1);
+            cell.setCellValue(titles[i]);
+            //设置样式
+            cell.setCellStyle(title(wb));
+        }
+
+        //4.2 内容
+        //获取列表数据
+        int num = 2;
+        //List<ShippingCargoDetailsEntity> cargoDetailsEntities = new ArrayList<>();
+        //List<?> objects = list.get(0);
+        //cargoDetailsEntities.addAll((List<ShippingCargoDetailsEntity>) objects);
+        for (ShippingCargoDetailsEntity orderEntity : list) {
+            //创建行
+            row = sheet.createRow(num++);
+            //设置行高
+            row.setHeightInPoints(24);
+
+            //设置列内容
+            //紧急度
+            cell = row.createCell(1);
+            if (orderEntity.getAog() != null) {
+
+                //样式
+                cell.setCellStyle(text(wb));
+                //内容
+                if (orderEntity.getAog()==0){
+                    cell.setCellValue("");
+                }
+                if (orderEntity.getAog()==1){
+                    cell.setCellValue("AOG");
+                }
+            }
+
+            //装箱单号列
+            cell = row.createCell(2);
+            if (orderEntity.getShipmentNumber() != null) {
+
+                //样式
+                cell.setCellStyle(text(wb));
+                //内容
+                cell.setCellValue(orderEntity.getShipmentNumber());
+            }
+            //合同号列
+            cell = row.createCell(3);
+            if (orderEntity.getContractNo() != null) {
+
+                //样式
+                cell.setCellStyle(text(wb));
+                //内容
+                cell.setCellValue(orderEntity.getContractNo());
+            }
+
+            //合同类型列
+            cell = row.createCell(4);
+            if (orderEntity.getContarctType() != null) {
+
+                //样式
+                cell.setCellStyle(text(wb));
+                //内容
+                cell.setCellValue(orderEntity.getContarctType());
+            }
+
+            //送修采购单位列
+            cell = row.createCell(5);
+            if (orderEntity.getPurchaser() != null) {
+
+                //样式
+                cell.setCellStyle(text(wb));
+                //内容
+                cell.setCellValue(orderEntity.getPurchaser());
+            }
+
+            //采购业务员列
+            cell = row.createCell(6);
+            if (orderEntity.getPurchasingClerk() != null) {
+
+                //样式
+                cell.setCellStyle(text(wb));
+                //内容
+                cell.setCellValue(orderEntity.getPurchasingClerk());
+            }
+
+            //收货人列
+            cell = row.createCell(7);
+            if (orderEntity.getReceiver() != null) {
+
+                //样式
+                cell.setCellStyle(text(wb));
+                //内容
+                cell.setCellValue(orderEntity.getReceiver());
+            }
+
+            //目的港|国列
+            cell = row.createCell(8);
+            if (orderEntity.getDestinationCountry() != null) {
+                //样式
+                cell.setCellStyle(text(wb));
+                //内容
+                cell.setCellValue(orderEntity.getDestinationHarbor());
+            }
+            //件号列
+            cell = row.createCell(9);
+            if (orderEntity.getPartNumber() != null) {
+                //样式
+                cell.setCellStyle(text(wb));
+                //内容
+                cell.setCellValue(orderEntity.getPartNumber());
+            }
+            //序号列
+            cell = row.createCell(10);
+            if (orderEntity.getSerialNumber() != null) {
+                //样式
+                cell.setCellStyle(text(wb));
+                //内容
+                cell.setCellValue(orderEntity.getSerialNumber());
+            }
+            //中文货物名称列
+            cell = row.createCell(11);
+            if (orderEntity.getChnCargoName() != null) {
+                //样式
+                cell.setCellStyle(text(wb));
+                //内容
+                cell.setCellValue(orderEntity.getChnCargoName());
+            }
+            //分拨日期列
+            cell = row.createCell(12);
+            if (orderEntity.getAssignDate() != null) {
+                //样式
+                cell.setCellStyle(text(wb));
+                //设置日期格式
+                //Date assignDate = orderEntity.getAssignDate();
+                //内容
+                cell.setCellValue(orderEntity.getAssignDate());
+            }
+            //分拨人列
+            cell = row.createCell(13);
+            if (orderEntity.getAssignee() != null) {
+                //样式
+                cell.setCellStyle(text(wb));
+                //内容
+                cell.setCellValue(orderEntity.getAssignee());
+            }
+        }
+
+        //3.把工作簿写出到浏览器响应（给用户下载Excel)
+        //3.2. 设置写出的文件格式： excel格式
+        response.setContentType("application/octet-stream;charset=utf-8");
+        //3.2 提示浏览器一个下载的文件名称: Content-Disposition
+        //response.addHeader("Content-Disposition", "attachment;filename=order.xlsx");
+
+        OutputStream outputStream = response.getOutputStream();
+
+        //3.3 把工作簿写出到响应中
+        wb.write(outputStream);
+        outputStream.flush();
+
+        return new ResponseResult<>(ResponseResult.StatusCode.SUCCESS, "操作成功");
+    }
+
+    //大标题的样式
+    public CellStyle bigTitle(Workbook wb) {
+        CellStyle style = wb.createCellStyle();
+        Font font = wb.createFont();
+        font.setFontName("宋体");
+        font.setFontHeightInPoints((short) 16);
+        font.setBold(true);//字体加粗
+        style.setFont(font);
+        style.setAlignment(HorizontalAlignment.CENTER);                //横向居中
+        style.setVerticalAlignment(VerticalAlignment.CENTER);        //纵向居中
+        return style;
+    }
+
+    //小标题的样式
+    public CellStyle title(Workbook wb) {
+        CellStyle style = wb.createCellStyle();
+        Font font = wb.createFont();
+        font.setFontName("黑体");
+        font.setFontHeightInPoints((short) 12);
+        style.setFont(font);
+        style.setAlignment(HorizontalAlignment.CENTER);                //横向居中
+        style.setVerticalAlignment(VerticalAlignment.CENTER);        //纵向居中
+        style.setBorderTop(BorderStyle.THIN);                        //上细线
+        style.setBorderBottom(BorderStyle.THIN);                    //下细线
+        style.setBorderLeft(BorderStyle.THIN);                        //左细线
+        style.setBorderRight(BorderStyle.THIN);                        //右细线
+        style.setAlignment(HorizontalAlignment.CENTER);                //横向居中
+        style.setVerticalAlignment(VerticalAlignment.CENTER);        //纵向居中
+        return style;
+    }
+
+    //文字样式
+    public CellStyle text(Workbook wb) {
+        CellStyle style = wb.createCellStyle();
+        Font font = wb.createFont();
+        font.setFontName("Times New Roman");
+        font.setFontHeightInPoints((short) 10);
+
+        //设置日期格式
+        style.setDataFormat(wb.createDataFormat().getFormat("yyyy-MM-dd"));
+        style.setAlignment(HorizontalAlignment.LEFT);                //横向居左
+        style.setVerticalAlignment(VerticalAlignment.CENTER);        //纵向居中
+        style.setBorderTop(BorderStyle.THIN);                        //上细线
+        style.setBorderBottom(BorderStyle.THIN);                    //下细线
+        style.setBorderLeft(BorderStyle.THIN);                        //左细线
+        style.setBorderRight(BorderStyle.THIN);                        //右细线
+        style.setFont(font);
+        style.setAlignment(HorizontalAlignment.CENTER);                //横向居中
+        style.setVerticalAlignment(VerticalAlignment.CENTER);        //纵向居中
+        return style;
+    }
+}
+
 ```
 
