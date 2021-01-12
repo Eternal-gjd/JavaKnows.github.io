@@ -726,4 +726,223 @@ int updateSkuStock(@Param("itemList") List<OmsOrderItem> orderItemList);
     </update>
 ```
 
-**3.一对多的xml写法==>mall->SmsCouponHistoryDao**
+#### **3.一对多的xml写法==>mall->SmsCouponHistoryDao**
+
+## Mybatis部分
+
+### 1. sql日期处理
+
+```sql
+-- datetime----------
+date_format(s.create_time,'%Y-%m-%d')  'create_time'
+```
+
+### 2.case .... when ...的使用
+
+```sql
+   CASE WHEN be.enterprise_operating_state = '01' THEN '营业'
+        WHEN be.enterprise_operating_state = '02' THEN '停业'
+        WHEN be.enterprise_operating_state = '03' THEN '整顿'
+        WHEN be.enterprise_operating_state = '04' THEN '停业整顿'
+        WHEN be.enterprise_operating_state = '05' THEN '歇业'
+        WHEN be.enterprise_operating_state = '06' THEN '注销'
+        WHEN be.enterprise_operating_state = '07' THEN '其他'
+        ELSE '营业'
+   END as 'enterpriseOperatingState'
+```
+
+### 3.自选日期统计
+
+dto
+
+```java
+@ApiModel(value="StatisticsDto", description="统计返回实体")
+public class StatisticsDto implements Serializable{
+
+    private static final long serialVersionUID = 1L;
+
+    @ApiModelProperty(value = "日期(可用于X轴)")
+    private String date;
+
+    @ApiModelProperty("名字(可用于X轴)")
+    private String name;
+
+    @ApiModelProperty(value = "统计数量(Y轴显示)")
+    private Long num;
+
+	//get ...
+    //set ...
+
+}
+```
+
+request
+
+```java
+public class DateRequest extends BasePageBean {
+
+    @ApiModelProperty("开始日期(yyyy-MM-dd)")
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    @NotBlank(message = "开始日期不能为空")
+    private String startDate;
+
+    @ApiModelProperty("结束日期(yyyy-MM-dd)")
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    @NotBlank(message = "结束日期不能为空")
+    private String endDate;
+
+    @ApiModelProperty("企业id(后端自动获取)")
+    private String enterpriseId;
+
+    @ApiModelProperty(value = "供应商名称")
+    private String supplierName;
+
+    @ApiModelProperty(value = "客户名称")
+    private String ownerName;
+
+    @ApiModelProperty(value = "库单类型(0:手工采购;1:其他采购;2:自动采购;3:采购退货)")
+    private Integer purchasedType;
+
+	//get ...
+	//set ...
+}
+```
+
+xml
+
+```sql
+<select id="purchaseOrderChartByType" resultType="com.ycxc.immv.controller.bean.vo.StatisticsDto">
+        SELECT
+        leftDay.date `date`,
+        leftDay.NAME `name`,
+        IFNULL(rightOut.num, 0) num
+        FROM
+        <choose>
+            <when test="request.type != null and request.type == 1">
+                (SELECT
+                date_add(subdate(CURDATE(),IF (date_format(CURDATE(), '%w') = 0,7,date_format(CURDATE(), '%w')) -
+                1),INTERVAL w.DATEINT - 1 DAY) `date`,
+                w.NAME `name`
+                FROM sys_week w) leftDay
+                LEFT JOIN (
+                SELECT
+                DATE_FORMAT(pp.create_time, '%Y-%m-%d') createDate,
+                SUM(pp.order_number) num
+                FROM
+                A pp
+                <where>
+                    <if test="request.purchasedType == 3">
+                        and pp.purchased_type = 3
+                    </if>
+                    <if test="request.purchasedType != 3">
+                        and pp.purchased_type != 3
+                    </if>
+                    AND pp.purchased_status in (0,3)
+                    AND YEARWEEK(DATE_FORMAT(pp.create_time, '%Y-%m-%d'),1) = YEARWEEK(NOW(), 1)
+                </where>
+                GROUP BY
+                createDate
+                ) rightOut
+                ON leftDay.date = rightOut.createDate
+            </when>
+            <when test="request.type != null and request.type == 2">
+                (SELECT
+                date_add(curdate(),INTERVAL - DAY (curdate()) + d.DATEINT DAY) `date`,
+                d.NAME `name`
+                FROM sys_day d) leftDay
+                LEFT JOIN (
+                SELECT
+                DATE_FORMAT(pp.create_time, '%Y-%m-%d') createDate,
+                SUM(pp.order_number) num
+                FROM
+                purchased_product pp
+                <where>
+                    <if test="request.purchasedType == 3">
+                        and pp.purchased_type = 3
+                    </if>
+                    <if test="request.purchasedType != 3">
+                        and pp.purchased_type != 3
+                    </if>
+                    AND pp.purchased_status in (0,3)
+                    AND DATE_FORMAT(pp.create_time, '%Y%m') = DATE_FORMAT(CURDATE(), '%Y%m')
+                </where>
+                GROUP BY
+                createDate
+                ) rightOut
+                ON leftDay.date = rightOut.createDate
+                WHERE
+                DATE_FORMAT(`date`, '%Y%m') = DATE_FORMAT(CURDATE(), '%Y%m')
+            </when>
+            <otherwise>
+                (SELECT
+                DATE_FORMAT(date_add(curdate(),INTERVAL - MONTH (curdate()) + m.DATEINT MONTH),'%Y-%m') date,
+                m.NAME `name`
+                FROM
+                sys_month m ) leftDay
+                LEFT JOIN (
+                SELECT
+                DATE_FORMAT(pp.create_time, '%Y-%m') createDate,
+                SUM(pp.order_number) num
+                FROM
+                purchased_product pp
+                <where>
+                    <if test="request.purchasedType == 3">
+                        and pp.purchased_type = 3
+                    </if>
+                    <if test="request.purchasedType != 3">
+                        and pp.purchased_type != 3
+                    </if>
+                    AND pp.purchased_status in (0,3)
+                    AND YEAR (pp.create_time) = YEAR (now())
+                </where>
+                GROUP BY createDate ) rightOut ON leftDay.date = rightOut.createDate
+            </otherwise>
+        </choose>
+        ORDER BY `date`
+    </select>
+```
+
+### 4.年月日统计
+
+```xml
+<select id="purchaseOrderByDay" resultType="com.ycxc.immv.controller.bean.vo.StatisticsDto">
+        SELECT
+        leftDay.date `date`,
+        leftDay. NAME `name`,
+        IFNULL(rightOut.num, 0) num
+        FROM
+        (SELECT
+        date_add(#{request.startDate},INTERVAL - DAY (#{request.startDate}) + d.DATEINT DAY) `date`,
+        d.NAME `name`
+        FROM
+        sys_day d
+        WHERE
+        date_add(
+        #{request.startDate},
+        INTERVAL - DAY (#{request.startDate}) + d.DATEINT DAY
+        ) BETWEEN #{request.startDate}
+        AND #{request.endDate}
+        ) leftDay
+        LEFT JOIN (
+        SELECT
+        DATE_FORMAT(pp.create_time, '%Y-%m-%d') createDate,
+        SUM(pp.order_number) num
+        FROM
+        purchased_product pp
+        <where>
+            <if test="request.purchasedType == 3">
+                and pp.purchased_type = 3
+            </if>
+            <if test="request.purchasedType != 3">
+                and pp.purchased_type != 3
+            </if>
+            AND pp.enterprise_id = #{request.enterpriseId}
+            AND DATE_FORMAT(pp.create_time, '%Y-%m-%d') between #{request.startDate} and #{request.endDate}
+        </where>
+        GROUP BY
+        createDate )
+        rightOut ON leftDay.date = rightOut.createDate
+        ORDER BY `date` asc
+    </select>
+```
+
