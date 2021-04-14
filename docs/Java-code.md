@@ -636,6 +636,419 @@ public class CancelOrderReceiver {
 
 ```
 
+### 4.导出Excel问题
+
+#### 工具类
+
+```java
+ package com.ycxc.vmts.common.util.utils;
+
+
+import com.ycxc.vmts.common.util.DateUtils;
+import org.apache.commons.lang.BooleanUtils;
+import org.apache.commons.lang.CharUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.math.NumberUtils;
+import org.apache.poi.hssf.usermodel.HSSFCellStyle;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.util.CellRangeAddress;
+import org.apache.poi.ss.util.CellReference;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.servlet.http.HttpServletResponse;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.math.BigDecimal;
+import java.net.URLEncoder;
+import java.util.Date;
+import java.util.List;
+
+/**
+ * @author gjd
+ * @date 2019/9/10 15:54
+ */
+public class ExcelUtils {
+
+    private final static Logger log = LoggerFactory.getLogger(ExcelUtils.class);
+
+    private final static String EXCEL2003 = "xls";
+    private final static String EXCEL2007 = "xlsx";
+
+
+    private static <T> void handleField(T t, String value, Field field) throws Exception {
+        Class<?> type = field.getType();
+        if (type == null || type == void.class || StringUtils.isBlank(value)) {
+            return;
+        }
+        if (type == Object.class) {
+            field.set(t, value);
+            //数字类型
+        } else if (type.getSuperclass() == null || type.getSuperclass() == Number.class) {
+            if (type == int.class || type == Integer.class) {
+                field.set(t, NumberUtils.toInt(value));
+            } else if (type == long.class || type == Long.class) {
+                field.set(t, NumberUtils.toLong(value));
+            } else if (type == byte.class || type == Byte.class) {
+                field.set(t, NumberUtils.toByte(value));
+            } else if (type == short.class || type == Short.class) {
+                field.set(t, NumberUtils.toShort(value));
+            } else if (type == double.class || type == Double.class) {
+                field.set(t, NumberUtils.toDouble(value));
+            } else if (type == float.class || type == Float.class) {
+                field.set(t, NumberUtils.toFloat(value));
+            } else if (type == char.class || type == Character.class) {
+                field.set(t, CharUtils.toChar(value));
+            } else if (type == boolean.class) {
+                field.set(t, BooleanUtils.toBoolean(value));
+            } else if (type == BigDecimal.class) {
+                field.set(t, new BigDecimal(value));
+            }
+        } else if (type == Boolean.class) {
+            field.set(t, BooleanUtils.toBoolean(value));
+        } else if (type == Date.class) {
+            //
+            field.set(t, value);
+        } else if (type == String.class) {
+            field.set(t, value);
+        } else {
+            Constructor<?> constructor = type.getConstructor(String.class);
+            field.set(t, constructor.newInstance(value));
+        }
+    }
+
+    /**
+     * 浏览器下载excel
+     *
+     * @param fileName
+     * @param response
+     */
+    public static void buildExcelDocument(String fileName, HttpServletResponse response) {
+        try {
+            //response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
+            //前端接受这种ContentType
+            response.setContentType("application/vnd.ms-excel;charset=utf-8");
+            response.setHeader("Content-Disposition", "attachment;filename=" + URLEncoder.encode(fileName+ DateUtils.getYMDHMS2(), "utf-8")+".xls");
+            response.flushBuffer();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * 生成excel文件
+     *
+     * @param path 生成excel路径
+     * @param wb
+     */
+    private static void buildExcelFile(String path, Workbook wb) {
+
+        File file = new File(path);
+        if (file.exists()) {
+            file.delete();
+        }
+        try {
+            wb.write(new FileOutputStream(file));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * @param columnListName 第二行表头数据
+     * @param list 目标数据
+     * @param outputStream
+     * @param title 第一行标题
+     * @param columnWidth 设置列宽
+     * @return void
+     * @author gjd
+     * @Description:Excel导出列表
+     * @Date 11:19 2020/11/24/0024
+     */
+    public static <T> void copy(List<String> columnListName, List<List<Object>> list, OutputStream outputStream, String title,int columnWidth) {
+        Workbook workbook = new HSSFWorkbook(); // 创建一个excel
+        Sheet sheet = workbook.createSheet(title);// 新建sheet页
+        //设置合并列
+        /**
+         * 参数依次为： 开始行号，结束行号，开始列号，结束列号
+         */
+        sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, columnListName.size()-1));
+        //设置列宽， 参数为：列索引，列宽度值
+        for (int i = 0; i < columnListName.size(); i++) {
+            sheet.setColumnWidth(i, columnWidth);
+        }
+
+        Row titleRow = sheet.createRow(0);
+        //设置行高度
+        titleRow.setHeightInPoints(36);
+        int size = columnListName.size();
+        Cell createCell = titleRow.createCell(0);
+        //设置标题
+        createCell.setCellValue(title);
+        //设置大标题样式
+        createCell.setCellStyle(bigTitle(workbook));
+        //设置表头列名
+        //创建内容行
+        //创建标题
+        titleRow = sheet.createRow(1);
+        //设置行高
+        titleRow.setHeightInPoints(26);
+        for (int i = 0; i < size; i++) {
+            createCell = titleRow.createCell(i);
+            createCell.setCellValue(columnListName.get(i));
+            //设置样式
+            createCell.setCellStyle(title(workbook));
+        }
+        
+        //避免遍历循环设施格式,导致消耗增大引发格式部分有问题
+        CellStyle text = text(workbook);
+
+        for (int i = 0; i < list.size(); i++) {
+            List<Object> valueList = list.get(i);
+            Row row = sheet.createRow(i + 2);
+            size = valueList.size();
+            for (int j = 1; j <= size; j++) {
+                //样式
+                createCell = row.createCell(j-1);
+                Object object = valueList.get(j-1);
+                createCell.setCellValue(object == null ? null : object.toString());
+                createCell.setCellStyle(text);
+            }
+        }
+        OutputStream out = outputStream;
+        try {
+            workbook.write(out);
+            out.flush();
+            out.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if (out != null)
+                try {
+                    out.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            out = null;
+            System.out.println("导出成功");
+        }
+        try {
+            workbook.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    /*=============================导入数据===================================*/
+    /**
+     * 用来得到真实行数
+     *
+     * @param sheet
+     * @return
+     */
+    public static int getExcelRealRow(Sheet sheet) {
+        CellReference cellReference = new CellReference("A4");
+        boolean flag = false;
+        for (int i = cellReference.getRow(); i <= sheet.getLastRowNum(); ) {
+            Row r = sheet.getRow(i);
+            if (r == null) {
+                //如果是空行（即没有任何数据、格式），直接把它以下的数据往上移动
+                sheet.shiftRows(i + 1, sheet.getLastRowNum(), -1);
+                continue;
+            }
+            flag = false;
+            for (Cell c : r) {
+                String cellValue = c.getStringCellValue();
+                if (StringUtils.isBlank(cellValue)) {
+                    flag = false;
+                    break;
+                }
+                if (c.getCellTypeEnum() != CellType.BLANK) {
+                    flag = true;
+                    break;
+                }
+            }
+            if (flag) {
+                i++;
+                continue;
+            } else {//如果是空白行（即可能没有数据，但是有一定格式）
+                if (i == sheet.getLastRowNum()) {
+                    //如果到了最后一行，直接将那一行remove掉
+                    sheet.removeRow(r);
+                } else {
+                    //如果还没到最后一行，则数据往上移一行
+                    sheet.shiftRows(i + 1, sheet.getLastRowNum(), -1);
+                }
+            }
+        }
+        return sheet.getLastRowNum() + 1;
+    }
+
+
+
+    /*<-------------------------辅助的私有方法----------------------------------------------->*/
+
+    /**
+     * @MethodName  : getFieldByName
+     * @Description : 根据字段名获取字段
+     * @param fieldName 字段名
+     * @param clazz 包含该字段的类
+     * @return 字段
+     */
+    private static Field getFieldByName(String fieldName, Class<?>  clazz){
+        //拿到本类的所有字段
+        Field[] selfFields=clazz.getDeclaredFields();
+
+        //如果本类中存在该字段，则返回
+        for(Field field : selfFields){
+            if(field.getName().equals(fieldName)){
+                return field;
+            }
+        }
+
+        //否则，查看父类中是否存在此字段，如果有则返回
+        Class<?> superClazz=clazz.getSuperclass();
+        if(superClazz!=null  &&  superClazz !=Object.class){
+            return getFieldByName(fieldName, superClazz);
+        }
+
+        //如果本类和父类都没有，则返回空
+        return null;
+    }
+
+
+    //大标题的样式
+    public static CellStyle bigTitle(Workbook wb) {
+        CellStyle style = wb.createCellStyle();
+        Font font = wb.createFont();
+        font.setFontName("宋体");
+        font.setFontHeightInPoints((short) 16);
+        font.setBold(true);//字体加粗
+        style.setFont(font);
+        style.setAlignment(HorizontalAlignment.CENTER);                //横向居中
+        style.setVerticalAlignment(VerticalAlignment.CENTER);        //纵向居中
+        return style;
+    }
+
+    //小标题的样式
+    public static CellStyle title(Workbook wb) {
+        CellStyle style = wb.createCellStyle();
+        Font font = wb.createFont();
+        font.setFontName("黑体");
+        font.setFontHeightInPoints((short) 12);
+        style.setFont(font);
+        style.setAlignment(HorizontalAlignment.CENTER);                //横向居中
+        style.setVerticalAlignment(VerticalAlignment.CENTER);        //纵向居中
+        style.setBorderTop(BorderStyle.THIN);                        //上细线
+        style.setBorderBottom(BorderStyle.THIN);                    //下细线
+        style.setBorderLeft(BorderStyle.THIN);                        //左细线
+        style.setBorderRight(BorderStyle.THIN);                        //右细线
+        style.setAlignment(HorizontalAlignment.CENTER);                //横向居中
+        style.setVerticalAlignment(VerticalAlignment.CENTER);        //纵向居中
+        return style;
+    }
+
+    //文字样式
+    public static CellStyle text(Workbook wb) {
+        CellStyle style = wb.createCellStyle();
+        Font font = wb.createFont();
+        font.setFontName("Times New Roman");
+        font.setFontHeightInPoints((short) 10);
+
+        //设置日期格式
+        style.setDataFormat(wb.createDataFormat().getFormat("yyyy-MM-dd"));
+        style.setAlignment(HorizontalAlignment.LEFT);                //横向居左
+        style.setVerticalAlignment(VerticalAlignment.CENTER);        //纵向居中
+        style.setBorderTop(BorderStyle.THIN);                        //上细线
+        style.setBorderBottom(BorderStyle.THIN);                    //下细线
+        style.setBorderLeft(BorderStyle.THIN);                        //左细线
+        style.setBorderRight(BorderStyle.THIN);                        //右细线
+        style.setFont(font);
+        style.setAlignment(HorizontalAlignment.CENTER);                //横向居中
+        style.setVerticalAlignment(VerticalAlignment.CENTER);        //纵向居中
+        return style;
+    }
+}
+```
+
+#### ExcelUtils的使用
+
+```java
+ /**
+     * @param vo
+     * @param httpServletResponse
+     * @return com.ycxc.vmts.common.utils2.DcResponse
+     * @author gjd
+     * @Description:
+     * @Date 9:36 2021/3/12/0012
+     */
+    @ApiOperation(value = "导出流水统计报列表数据")
+    @PostMapping(value = "/exportRunningWaterExcel")
+    public DcResponse exportRunningWaterExcel(@RequestBody WasteRequest vo, HttpServletResponse httpServletResponse) throws IOException {
+        vo.setPageNum(1);
+        vo.setPageSize(9999);
+        DcResponse response = iWasteTransferListService.getRunningWater(vo);
+        PageInfo<HashMap<String,Object>> pageInfo = (PageInfo<HashMap<String, Object>>) response.getData();
+        List<HashMap<String, Object>> resList = pageInfo.getList();
+        if (CollectionUtils.isEmpty(resList))
+            return DcResponse.ok("操作成功,但暂无导出数据");
+        ArrayList<List<Object>> arrayList = new ArrayList<>();
+        for (HashMap<String, Object> res : resList) {
+            List<Object> valueList = new ArrayList<>();
+            valueList.add(res.get("district"));
+            valueList.add(res.get("enterprise_operating_address"));
+            
+            Double standing_book_number = (Double) res.get("standing_book_number");
+            BigDecimal decimal = new BigDecimal(Double.toString(standing_book_number));
+            valueList.add(decimal);
+            //............
+            arrayList.add(valueList);
+        }
+        //3.1 设置标题
+        String title = "导出流水统计报列表数据";
+        //设置列宽
+        int columnWidth = 20 * 256;
+        ExcelUtils.buildExcelDocument(title, httpServletResponse);
+        // 导出的EXCEL列属性
+        List<String> columnListName = Arrays.asList("地区", "街道","经营类别", "企业名称", "废物代码", "固废物名称", "数量(吨)", "日期");
+        ExcelUtils.copy(columnListName, arrayList, httpServletResponse.getOutputStream(), title, columnWidth);
+        return DcResponse.ok();
+    }
+```
+
+
+
+#### 4.1 导出是 BigDecimal 字段 去掉小数点后的有效位
+
+1. sql 方面处理
+
+   ```mysql
+   0 +cast(s.standing_book_number as CHAR)
+   ```
+
+2. 返回的字段是 double 类型
+
+   - BigDecimal 接收double 需要先将double 转String
+     再new  BigDecimal(String str)
+
+#### 4.2 手机号的处理
+
+```java
+//手机号码
+Double moblie = row.getCell(8).getNumericCellValue();
+BigDecimal bd = new BigDecimal(moblie.toString());//要修改的值，需要string类型
+String enterpriseLinkMobile=bd.setScale(0,BigDecimal.ROUND_HALF_UP).toPlainString();
+
+```
+
+
+
 ## Sql部分
 
 ### 1.获取超时订单sql
@@ -726,7 +1139,79 @@ int updateSkuStock(@Param("itemList") List<OmsOrderItem> orderItemList);
     </update>
 ```
 
-#### **3.一对多的xml写法==>mall->SmsCouponHistoryDao**
+#### **2.2一对多的xml写法==>mall->SmsCouponHistoryDao**
+
+### 3.经纬度计算距离的Sql
+
+- enterprise_addr_x : x轴坐标
+- enterprise_addr_y : y轴坐标
+- latitude : 纬度
+- longitude : 经度
+
+```mysql
+-- 公里数
+SELECT 6371 * acos(
+        cos(radians(#{longitude}))
+                * cos(radians(enterprise_addr_x))
+                      * cos(radians(enterprise_addr_y) - radians({latitude}))
+                    + sin(radians(#{longitude}))
+                                  * sin(radians(enterprise_addr_x))
+                              ) * 1000
+                      ) AS distance
+                FROM isz_enterprise
+                HAVING distance & lt;20
+    ORDER BY distance;
+```
+
+### 4.获取 一个字段里面的所有图片的次数
+
+#### 4.1 replace 函数
+
+- 语法：replace(object,search,replace)
+
+- 意义：把object中出现search的全部替换为replace
+
+```mysql
+update  t_user_score  set cname = REPLACE(cname ,' ','') ;
+```
+
+```mysql
+sum((char_length(substring_index(ev.image,',-',1)) - char_length( replace(substring_index(ev.image,',-',1), 'htt','' ))) div 3) as'totalSplitImage',
+```
+
+### 5.获取所有单字段所有图片
+
+```mysql
+substring_index(ev.image,',-',1) 'splitImage',
+```
+
+### 6.时间戳 转 时间格式
+
+- 10位的时间戳
+
+```mysql
+select FROM_UNIXTIME(1251820800,'%Y-%m-%d')
+```
+
+- 13位的时间戳的处理
+
+```mysql
+select FROM_UNIXTIME(CONVERT(1616133400952/1000,signed), '%Y-%m-%d %T')
+
+-- ---不加 %T 只有 年月日
+```
+
+- 时间转时间戳
+
+```mysql
+select unix_timestamp('2009-09-02');
+```
+
+7.varchar类型判断非空
+
+```mysql
+LENGTH(trim(columns))>0
+```
 
 ## Mybatis部分
 
@@ -749,6 +1234,12 @@ date_format(s.create_time,'%Y-%m-%d')  'create_time'
         WHEN be.enterprise_operating_state = '07' THEN '其他'
         ELSE '营业'
    END as 'enterpriseOperatingState'
+```
+
+```sql
+select
+sum(case when (ev.score &lt; 2 or ev.description &lt; 2) then 1 else 0 end ) 'totalNegativeCounts'
+from A
 ```
 
 ### 3.自选日期统计
