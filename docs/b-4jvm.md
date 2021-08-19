@@ -16,7 +16,7 @@ Java 虚拟机在执行 Java 程序的过程中会把它管理的内存划分成
 **JDK 1.8 ：**
 
 <div align="center">  
-<img src="https://eternal-java.oss-cn-beijing.aliyuncs.com/JavaKnowledge_Picts/JVM%E8%BF%90%E8%A1%8C%E6%97%B6%E6%95%B0%E6%8D%AE%E5%8C%BA%E5%9F%9F.png" width="600px"/>
+<img src="https://eternal-java.oss-cn-beijing.aliyuncs.com/JavaKnowledge_Picts/2019-3Java%E8%BF%90%E8%A1%8C%E6%97%B6%E6%95%B0%E6%8D%AE%E5%8C%BA%E5%9F%9FJDK1.8.png" width="600px"/>
 </div>
 
 **线程私有的：**
