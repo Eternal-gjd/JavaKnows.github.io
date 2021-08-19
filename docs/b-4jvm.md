@@ -9,14 +9,16 @@ Java 虚拟机在执行 Java 程序的过程中会把它管理的内存划分成
 **JDK 1.8之前：**
 
 <div align="center">  
-<img src="https://my-blog-to-use.oss-cn-beijing.aliyuncs.com/2019-3/JVM运行时数据区域.png" width="600px"/>
+<img src="https://eternal-java.oss-cn-beijing.aliyuncs.com/JavaKnowledge_Picts/JVM%E8%BF%90%E8%A1%8C%E6%97%B6%E6%95%B0%E6%8D%AE%E5%8C%BA%E5%9F%9F.png" width="600px"/>
 </div>
+
 
 **JDK 1.8 ：**
 
 <div align="center">  
-<img src="https://my-blog-to-use.oss-cn-beijing.aliyuncs.com/2019-3Java运行时数据区域JDK1.8.png" width="600px"/>
+<img src="https://eternal-java.oss-cn-beijing.aliyuncs.com/JavaKnowledge_Picts/JVM%E8%BF%90%E8%A1%8C%E6%97%B6%E6%95%B0%E6%8D%AE%E5%8C%BA%E5%9F%9F.png" width="600px"/>
 </div>
+
 **线程私有的：**
 
 - 程序计数器
@@ -83,8 +85,9 @@ Java 虚拟机所管理的内存中最大的一块，Java 堆是所有线程共�
 Java 堆是垃圾收集器管理的主要区域，因此也被称作**GC堆（Garbage Collected Heap）**.从垃圾回收的角度，由于现在收集器基本都采用分代垃圾收集算法，所以Java堆还可以细分为：新生代和老年代：再细致一点有：Eden空间、From Survivor、To Survivor空间等。**进一步划分的目的是更好地回收内存，或者更快地分配内存。**
 
 <div align="center">  
-<img src="https://my-blog-to-use.oss-cn-beijing.aliyuncs.com/2019-3堆结构.png" width="400px"/>
+<img src="https://eternal-java.oss-cn-beijing.aliyuncs.com/JavaKnowledge_Picts/2019-3%E5%A0%86%E7%BB%93%E6%9E%84.png" width="400px"/>
 </div>
+
 
 上图所示的 eden区、s0区、s1区都属于新生代，tentired 区属于老年代。大部分情况，对象都会首先在 Eden 区域分配，在一次新生代垃圾回收后，如果对象还存活，则会进入 s0 或者 s1，并且对象的年龄还会加 1(Eden区->Survivor 区后对象的初始年龄变为1)，当它的年龄增加到一定程度（默认为15岁），就会被晋升到老年代中。对象晋升到老年代的年龄阈值，可以通过参数 `-XX:MaxTenuringThreshold` 来设置。
 
