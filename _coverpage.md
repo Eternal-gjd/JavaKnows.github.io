@@ -4,6 +4,6 @@
 <h1 align="center">Java-BaseKnowledges</h1>
 
 [GitHub](https://github.com/Eternal-gjd/JavaKnows.github.io)
-[开始阅读](#docsify-demo)
+[开始阅读](./docs/b-1面试题总结-Java基础.md)
 
 
